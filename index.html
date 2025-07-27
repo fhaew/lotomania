@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lotomania - Jogos Inteligentes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .video-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      z-index: -1;
+      filter: brightness(0.4);
+    }
+
+    .overlay {
+      position: relative;
+      z-index: 1;
+      background-color: rgba(0, 0, 0, 0.6);
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      color: white;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: #fff;
+      text-shadow: 2px 2px 5px #000;
+    }
+
+    .ultimo-resultado {
+      font-size: 18px;
+      color: #00ffcc;
+      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    .jogos-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      max-width: 1200px;
+    }
+
+    .jogo {
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 2px solid #333;
+      border-radius: 12px;
+      padding: 18px;
+      width: 300px;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      color: #2c3e50;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .numeros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .bola {
+      width: 28px;
+      height: 28px;
+      background-color: #e67e22;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .stats {
+      font-size: 13px;
+      color: #444;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 600px) {
+      .jogo {
+        width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <video autoplay muted loop class="video-bg">
+    <source src="./img/Standard_Mode_falling_in_slow_motion.mp4" type="video/mp4">
+    Seu navegador não suporta vídeo HTML5.
+  </video>
+
+  <div class="overlay">
+    <h1>Jogos Inteligentes Lotomania</h1>
+    <div class="ultimo-resultado">
+      Último Resultado: <span id="resultadoLoto">01 - 03 - 07 - 10 - 15 - 18 - 22 - 24 - 29 - 32 - 35 - 38 - 42 - 44 - 48 - 52 - 56 - 61 - 67 - 70</span>
+    </div>
+    <div class="jogos-container" id="jogosContainer"></div>
+  </div>
+
+  <script>
+    const ultimoResultado = [1,3,7,10,15,18,22,24,29,32,35,38,42,44,48,52,56,61,67,70];
+
+    function gerarJogoInteligente() {
+      const jogo = new Set();
+      const qtdRepetidas = Math.floor(Math.random() * 4) + 20;
+      const copiaUltimo = [...ultimoResultado];
+
+      while (jogo.size < qtdRepetidas && copiaUltimo.length > 0) {
+        const index = Math.floor(Math.random() * copiaUltimo.length);
+        jogo.add(copiaUltimo.splice(index, 1)[0]);
+      }
+
+      while (jogo.size < 50) {
+        const n = Math.floor(Math.random() * 100);
+        jogo.add(n);
+      }
+
+      const numeros = Array.from(jogo).sort((a, b) => a - b);
+
+      const pares = numeros.filter(n => n % 2 === 0).length;
+      if (pares < 20 || pares > 30) return gerarJogoInteligente();
+
+      return numeros;
+    }
+
+    function calcularForcaJogo(repetidas, pares, soma) {
+      let score = 0;
+      if (repetidas >= 20 && repetidas <= 28) score += 40;
+      else if (repetidas >= 15 && repetidas <= 30) score += 25;
+      else score += 10;
+
+      if (pares >= 20 && pares <= 30) score += 30;
+      else score += 10;
+
+      if (soma >= 1900 && soma <= 2500) score += 30;
+      else score += 15;
+
+      return score;
+    }
+
+    function exibirJogos(jogos) {
+      const container = document.getElementById('jogosContainer');
+      container.innerHTML = '';
+      jogos.forEach(jogo => {
+        const pares = jogo.filter(n => n % 2 === 0).length;
+        const impares = 50 - pares;
+        const soma = jogo.reduce((a, b) => a + b, 0);
+        const repetidas = jogo.filter(n => ultimoResultado.includes(n)).length;
+        const forca = calcularForcaJogo(repetidas, pares, soma);
+        const probabilidade = (1 / 1120529256 * 100).toFixed(12);
+
+        const div = document.createElement('div');
+        div.className = 'jogo';
+
+        const numerosDiv = document.createElement('div');
+        numerosDiv.className = 'numeros';
+        jogo.forEach(n => {
+          const bola = document.createElement('div');
+          bola.className = 'bola';
+          bola.textContent = n.toString().padStart(2, '0');
+          numerosDiv.appendChild(bola);
+        });
+
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'stats';
+        statsDiv.innerHTML = `
+          P: ${pares} | I: ${impares} | Σ: ${soma}<br>
+          Repetidas: ${repetidas} | Prob: ${probabilidade}%<br>
+          Estimativa de Força: ${forca}%
+        `;
+
+        div.appendChild(numerosDiv);
+        div.appendChild(statsDiv);
+        container.appendChild(div);
+      });
+    }
+
+    function gerarJogos() {
+      const jogos = [];
+      for (let i = 0; i < 10; i++) {
+        jogos.push(gerarJogoInteligente());
+      }
+      localStorage.setItem('jogosLotomania', JSON.stringify(jogos));
+      localStorage.setItem('ultimoResultadoLotomania', JSON.stringify(ultimoResultado));
+      exibirJogos(jogos);
+    }
+
+    function carregarOuGerarJogos() {
+      const salvo = localStorage.getItem('jogosLotomania');
+      const resultadoSalvo = localStorage.getItem('ultimoResultadoLotomania');
+
+      if (salvo && resultadoSalvo) {
+        const jogosSalvos = JSON.parse(salvo);
+        const resultadoAnterior = JSON.parse(resultadoSalvo);
+
+        const mesmoResultado = JSON.stringify(resultadoAnterior) === JSON.stringify(ultimoResultado);
+
+        if (mesmoResultado) {
+          exibirJogos(jogosSalvos);
+          return;
+        }
+      }
+
+      gerarJogos();
+    }
+
+    carregarOuGerarJogos();
+  </script>
+</body>
+</html>
